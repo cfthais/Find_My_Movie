@@ -1,0 +1,42 @@
+{% from "bootstrap5/form.html" import render_form %} {% block content %} {%
+include "base.html" %}
+
+<header
+  class="masthead"
+
+>
+  <div class="mb-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="heading">
+          <h1>Register</h1>
+          <span class="subheading">Welcome!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</header>
+
+<main class="mb-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <ul class="flash">
+      {% for message in messages %}
+      <p>{{ message }}</p>
+      {% endfor %}
+      </ul>
+      {% endif %}
+      {% endwith %}
+        <form method="POST">
+          {{  render_form(form) }}
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

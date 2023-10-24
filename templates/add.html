@@ -1,0 +1,21 @@
+{% block content %} {%
+include "base.html" %}
+
+<main>
+    <div class="mb-4">
+    <div class="container">
+    <h1 class="heading">Search a Movie</h1>
+    <form action="{{url_for('add_movie')}}" method="POST">
+        <div class="container text-center add">
+        <label for="title">Movie Title</label>
+        <br><div class="pt-2">
+        <input type="text" id="title" name="title" value="">
+        <br></div><div class="pt-2">
+        <button type="submit" class="btn btn-primary">Search movie</button>
+        </div>
+        </div>
+    </form>
+    </div>
+    </div>
+</main>
+{% endblock %}

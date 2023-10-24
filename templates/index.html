@@ -1,0 +1,46 @@
+{% block content %} {%
+include "base.html" %}
+
+<main>
+<div class="container">
+    <h1 class="heading">Previous searched movies</h1>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3">
+    {% for i in range(movies|length) %}
+    <div class="col">
+    <div class="card" >
+    <div class="front" style="background-image: url('{{movies[i]['img_url']}}');">
+    </div>
+    <div class="back"><div>
+    <div class="title">{{movies[i]['title']}} <span class="release_date">{{movies[i]['year']}}</span></div>
+        {% if services[i]|length == 0 %}
+        <p class="review">Streaming not available in the US</p>
+        {% else %}
+        <p class="review">Streaming available at: </p>
+            {% for j in range(services[i]|length) %}
+            {% if j < services[i]|length - 1 %}
+            <a href="{{links[i][j]}}">{{services[i][j]}} |</a>
+            {% else %}
+            <a href="{{links[i][j]}}">{{services[i][j]}}</a>
+            {% endif %}
+            {% endfor %}
+        {% endif %}
+        <p class="overview">
+            {{movies[i]['description']}}
+        </p>
+
+        <a href="{{url_for('delete_movie', id_num=movies[i]['id'])}}" class="button delete-button">Delete</a>
+
+    </div>
+    </div>
+    </div>
+    </div>
+    {% endfor %}
+    </div>
+    </div>
+    <div class="container text-center add">
+    <a href="{{ url_for('add_movie') }}">
+        <button type="button" class="btn btn-primary">Search Movie</button>
+    </a>
+    </div>
+</main>
+{% endblock %}
