@@ -1,4 +1,5 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, session
+from flask_session import Session
 from flask_bootstrap import Bootstrap5
 import requests
 from forms import LoginForm, RegisterForm
@@ -7,9 +8,6 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 import os
-
-# Global variables
-DATA = []
 
 # APIs urls and headers
 url_api_movie = "https://api.themoviedb.org/3/search/movie"
@@ -24,9 +22,13 @@ headers_streaming = {
     "X-RapidAPI-Host": "streaming-availability.p.rapidapi.com"
 }
 
-# Set up of DB, flask app, login manager
+# Set up DB, flask app, login manager, session
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+
+Session(app)
 Bootstrap5(app)
 
 db = SQLAlchemy()
@@ -103,9 +105,10 @@ def register():
             flash("This email is already being used")
             return redirect(url_for('login'))
         else:
+            password = generate_password_hash(form.password.data, method='pbkdf2:sha256', salt_length=8)
             new_user = User(
                 email=form.email.data,
-                password=generate_password_hash(form.password.data, method='pbkdf2', salt_length=8),
+                password=password,
                 name=form.name.data
             )
 
@@ -120,6 +123,7 @@ def register():
 @login_required
 def home():
     with app.app_context():
+        # page displaying all movies previously researched by the user
         all_movies = current_user.movies
         all_movies_list = []
         all_streaming_list = []
@@ -130,7 +134,6 @@ def home():
             all_links_list.append(movie.__dict__['link'][:-1].split())
     return render_template("index.html", movies=all_movies_list, services=all_streaming_list, links=all_links_list,
                            logged_in=current_user.is_authenticated)
-
 
 
 @app.route('/delete/id=<id_num>', methods=['GET', 'POST'])
@@ -146,13 +149,14 @@ def delete_movie(id_num):
 @login_required
 def add_movie():
     if request.method == 'POST':
+        # page to search a movie by the title in the API (get movie`s info - except streaming -  to fill table)
         new_title = request.form['title']
         params = {
             "query": new_title
         }
         response = requests.get(url_api_movie, headers=headers_api_movie, params=params)
         data = response.json()['results']
-        DATA.append(data)
+        session['movie_data'] = data
         return redirect(url_for('select_movie'))
     return render_template('add.html', logged_in=current_user.is_authenticated)
 
@@ -160,6 +164,8 @@ def add_movie():
 @app.route("/select", methods=['GET', 'POST'])
 @login_required
 def select_movie():
+    # page followed by the "add" page showing options of movies based on the title previously searched
+    # it searches the streaming services where the chosen movie is available in a second API
     if request.method == 'POST':
 
         id_movie = request.form['movie']
@@ -192,7 +198,9 @@ def select_movie():
                     list_links += el['link'] + ' '
         except:
             pass
+        # if movie is already in the db, we should not add a duplicate entry, just create relation current_user->movie
         searched_movie = db.session.execute(db.select(Movie).where(Movie.title == new_title)).scalar()
+        # if movie is not in the db, then add it
         if searched_movie is None:
             searched_movie = Movie(
                 title=new_title,
@@ -211,7 +219,7 @@ def select_movie():
 
         return redirect(url_for('home'))
 
-    return render_template('select.html', data=DATA[-1], logged_in=current_user.is_authenticated)
+    return render_template('select.html', data=session['movie_data'], logged_in=current_user.is_authenticated)
 
 
 @app.route("/logout")
