@@ -140,7 +140,7 @@ def home():
 @login_required
 def delete_movie(id_num):
     movie_to_delete = db.session.execute(db.select(Movie).where(Movie.id == id_num)).scalar()
-    db.session.delete(movie_to_delete)
+    current_user.movies.remove(movie_to_delete)
     db.session.commit()
     return redirect(url_for('home'))
 
